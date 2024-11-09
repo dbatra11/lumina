@@ -1,4 +1,5 @@
-// App.js
+// frontend/src/App.js
+
 import React, { useState } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import axios from 'axios';
@@ -76,13 +77,18 @@ function App() {
     formData.append('file', file);
     try {
       const response = await axios.post('http://localhost:5000/api/analyze', formData);
-      setAnalysisResults(response.data);
+      setAnalysisResults(response.data.insights);
       if (response.data.charts) {
         setCharts(response.data.charts);
       }
+      alert('Data analyzed successfully!');
     } catch (error) {
       console.error('Error analyzing data:', error);
-      alert('Failed to analyze data.');
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(`Failed to analyze data: ${error.response.data.error}`);
+      } else {
+        alert('Failed to analyze data.');
+      }
     }
   };
 
@@ -97,9 +103,14 @@ function App() {
     try {
       const response = await axios.post('http://localhost:5000/api/descriptive_statistics', formData);
       setStatistics(response.data);
+      alert('Descriptive statistics retrieved successfully!');
     } catch (error) {
       console.error('Error getting descriptive statistics:', error);
-      alert('Failed to retrieve descriptive statistics.');
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(`Failed to retrieve descriptive statistics: ${error.response.data.error}`);
+      } else {
+        alert('Failed to retrieve descriptive statistics.');
+      }
     }
   };
 
@@ -115,7 +126,7 @@ function App() {
     if (typeof value === 'object' && value !== null) {
       return renderNestedTable(value);
     } else {
-      return <span>{value}</span>;
+      return <span>{value !== null ? value : 'N/A'}</span>;
     }
   };
 
@@ -155,27 +166,33 @@ function App() {
     }
   };
 
-  const generateChartData = (chartInfo) => {
-    const { type, labels, datasets } = chartInfo;
-    const data = {
-      labels: labels,
-      datasets: datasets.map((ds) => ({
-        label: ds.label,
-        data: ds.data,
-        backgroundColor: ds.backgroundColor || 'rgba(75,192,192,0.4)',
-        borderColor: ds.borderColor || 'rgba(75,192,192,1)',
-        fill: ds.fill || false,
-      })),
-    };
-    return { type, data };
-  };
-
   const renderCharts = () => {
     if (!charts) return null;
 
     return charts.map((chartInfo, index) => {
-      const { type, labels, datasets, title } = chartInfo;
-      const data = generateChartData(chartInfo);
+      const { type, title, image } = chartInfo;
+
+      if (type === 'image') {
+        return (
+          <div key={index} className="mb-4">
+            <h4>{title}</h4>
+            <img src={`data:image/png;base64,${image}`} alt={title} className="img-fluid" />
+          </div>
+        );
+      }
+
+      // Existing Chart.js rendering...
+      const { labels, datasets } = chartInfo;
+      const data = {
+        labels: labels,
+        datasets: datasets.map((ds) => ({
+          label: ds.label,
+          data: ds.data,
+          backgroundColor: ds.backgroundColor || 'rgba(75,192,192,0.4)',
+          borderColor: ds.borderColor || 'rgba(75,192,192,1)',
+          fill: ds.fill || false,
+        })),
+      };
       const options = {
         responsive: true,
         plugins: {
@@ -191,15 +208,29 @@ function App() {
 
       switch (type) {
         case 'bar':
-          return <Bar key={index} data={data.data} options={options} />;
+          return <Bar key={index} data={data} options={options} />;
         case 'line':
-          return <Line key={index} data={data.data} options={options} />;
+          return <Line key={index} data={data} options={options} />;
         case 'pie':
-          return <Pie key={index} data={data.data} options={options} />;
+          return <Pie key={index} data={data} options={options} />;
         default:
           return null;
       }
     });
+  };
+
+  const renderStatistics = () => {
+    if (!statistics) return null;
+
+    return (
+      <div className="statistics-results mb-4">
+        <h2>Descriptive Statistics</h2>
+        <h3>Describe</h3>
+        {renderFormattedTable(statistics.describe)}
+        <h3>Mode</h3>
+        {renderFormattedTable(statistics.mode)}
+      </div>
+    );
   };
 
   return (
@@ -237,10 +268,7 @@ function App() {
       )}
 
       {statistics && (
-        <div className="statistics-results mb-4">
-          <h2>Descriptive Statistics</h2>
-          {renderFormattedTable(statistics)}
-        </div>
+        renderStatistics()
       )}
     </div>
   );

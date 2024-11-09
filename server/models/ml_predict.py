@@ -1,5 +1,8 @@
+# backend/models/ml_predict.py
+
 import pandas as pd
 from sklearn.linear_model import LinearRegression
+import joblib
 
 model = LinearRegression()
 
