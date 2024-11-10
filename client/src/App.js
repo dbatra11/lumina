@@ -16,6 +16,16 @@ import {
   Legend,
 } from 'chart.js';
 
+// Import icons at the top
+import analyzeIcon from './assets/data.png';
+import cleanIcon from './assets/cleaning.png';
+import chooseFileIcon from './assets/self-service.png';
+import descriptiveIcon from './assets/information.png';
+import checkedIcon from './assets/checked.png';
+import summaryIcon from './assets/contract.png';
+import insightsIcon from './assets/insight.png';
+import chartsIcon from './assets/bar-chart.png';
+
 // Register Chart.js components
 ChartJS.register(
   CategoryScale,
@@ -28,6 +38,7 @@ ChartJS.register(
   Legend
 );
 
+
 function App() {
   const [file, setFile] = useState(null);
   const [analysisResults, setAnalysisResults] = useState(null);
@@ -37,16 +48,27 @@ function App() {
   const [selectedChart, setSelectedChart] = useState(null);
   const [loading, setLoading] = useState(false); 
   const [error, setError] = useState(null);
-  const [showSection, setShowSection] = useState(''); 
+  const [showSection, setShowSection] = useState('');
+  const [fileReceived, setFileReceived] = useState(false);
+
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
+    setFileReceived(true); // Show confirmation message
+  
     setAnalysisResults(null);
     setCleanedFileUrl(null);
     setStatistics(null);
     setCharts(null);
     setError(null);
+  
+    // Hide the confirmation message after 5 seconds
+    setTimeout(() => {
+      setFileReceived(false);
+    }, 5000);
   };
+  
+  
 
   const handleCleanData = async () => {
     if (!file) {
@@ -132,67 +154,80 @@ function App() {
     }
   };
 
-  const renderSectionButton = (label, section) => (
-    <button onClick={() => setShowSection(showSection === section ? '' : section)} className="btn btn-primary mb-2">
+  const renderSectionButton = (label, section, icon) => (
+    <button
+      onClick={() => setShowSection(showSection === section ? '' : section)}
+      className="option-button"
+    >
+      <img src={icon} alt={label} className="option-icon" />
       {label}
     </button>
   );
+  
 
   const renderFormattedSummary = (summary) => {
     const lines = summary.split(' - ');
     return (
-      <div>
-        <p>{lines[0]}</p>
-        <ul>
+      <div className="summary-container">
+        <h3 className="summary-header">Summary</h3>
+        <p className="summary-text">{lines[0]}</p>
+        <ul className="summary-list">
           {lines.slice(1).map((line, index) => (
-            <li key={index}>{line.trim()}</li>
+            <li key={index} className="summary-item">{line.trim()}</li>
           ))}
         </ul>
       </div>
     );
   };
+  
 
   const renderCorrelationMatrix = (matrix) => (
-    <table className="table table-bordered table-hover">
-      <thead>
-        <tr>
-          <th>Variable</th>
-          {Object.keys(matrix).map((key) => (
-            <th key={key}>{key}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {Object.entries(matrix).map(([rowKey, rowValues], rowIndex) => (
-          <tr key={rowIndex}>
-            <th>{rowKey}</th>
-            {Object.values(rowValues).map((value, colIndex) => (
-              <td key={colIndex}>{value}</td>
+    <div className="correlation-matrix-container">
+      <table className="table table-bordered table-hover">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            {Object.keys(matrix).map((key) => (
+              <th key={key}>{key}</th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {Object.entries(matrix).map(([rowKey, rowValues], rowIndex) => (
+            <tr key={rowIndex}>
+              <th>{rowKey}</th>
+              {Object.values(rowValues).map((value, colIndex) => (
+                <td key={colIndex}>{value}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
+  
 
   const renderFeatureImportance = (featureImportance) => (
-    <table className="table table-bordered table-hover">
-      <thead>
-        <tr>
-          <th>Feature</th>
-          <th>Importance Score</th>
-        </tr>
-      </thead>
-      <tbody>
-        {Object.entries(featureImportance).map(([feature, importance], index) => (
-          <tr key={index}>
-            <td>{feature}</td>
-            <td>{importance}</td>
+    <div className="table-container">
+      <table className="insights-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Importance Score</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {Object.entries(featureImportance).map(([feature, importance], index) => (
+            <tr key={index}>
+              <td>{feature}</td>
+              <td>{importance}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
+  
 
   const renderFormattedInsights = (insights) => {
     if (!insights || typeof insights !== 'object') return <p>No insights available.</p>;
@@ -226,28 +261,30 @@ function App() {
 
   const renderDescriptiveStatistics = (statistics) => {
     if (!statistics || !statistics.describe) return <p>No descriptive statistics available.</p>;
-
+  
     return (
-      <table className="table table-bordered table-hover">
-        <thead>
-          <tr>
-            <th>Variable</th>
-            {Object.keys(statistics.describe[Object.keys(statistics.describe)[0]]).map((key) => (
-              <th key={key}>{key}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(statistics.describe).map(([variable, stats], index) => (
-            <tr key={index}>
-              <th>{variable}</th>
-              {Object.values(stats).map((value, idx) => (
-                <td key={idx}>{value !== null ? value : 'N/A'}</td>
+      <div className="table-container">
+        <table className="descriptive-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              {Object.keys(statistics.describe[Object.keys(statistics.describe)[0]]).map((key) => (
+                <th key={key}>{key}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {Object.entries(statistics.describe).map(([variable, stats], index) => (
+              <tr key={index}>
+                <td>{variable}</td>
+                {Object.values(stats).map((value, idx) => (
+                  <td key={idx}>{value !== null ? value : 'N/A'}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   };
 
@@ -325,25 +362,47 @@ function App() {
 
   return (
     <div className="App container">
-      <h1 className="mt-4 mb-4">Lumina Data Assistant</h1>
+      <h1 className="app-title">Lumina Data Assistant</h1>
       
-      <div className="mb-3">
-        <input type="file" onChange={handleFileChange} className="form-control" />
+      <div className="upload-section" onClick={() => document.getElementById('fileInput').click()}>
+        <img src={chooseFileIcon} alt="Choose File" className="upload-icon" />
+        <p className="upload-text">Click or Drag to Upload a File</p>
+        <input
+          type="file"
+          id="fileInput"
+          onChange={handleFileChange}
+          className="upload-input"
+          style={{ display: 'none' }}
+        />
       </div>
 
-      <div className="mb-3">
-        <button onClick={handleCleanData} className="btn btn-primary me-2">Clean Data</button>
-        <button onClick={handleAnalyzeData} className="btn btn-success me-2">Analyze Data</button>
-        <button onClick={handleDescriptiveStatistics} className="btn btn-info">Get Descriptive Statistics</button>
+      {fileReceived && (
+        <div className="confirmation-section">
+          <img src={checkedIcon} alt="File Received" className="confirmation-icon" />
+          <p className="confirmation-text">File received successfully!</p>
+        </div>
+      )}
+
+
+
+      <div className="action-section">
+        <button onClick={handleCleanData} className="action-button">
+          <img src={cleanIcon} alt="Clean Data" className="icon" /> Clean Data
+        </button>
+        <button onClick={handleAnalyzeData} className="action-button">
+          <img src={analyzeIcon} alt="Analyze Data" className="icon" /> Analyze Data
+        </button>
+        <button onClick={handleDescriptiveStatistics} className="action-button">
+          <img src={descriptiveIcon} alt="Descriptive Stats" className="icon" /> Get Descriptive Statistics
+        </button>
       </div>
 
-      {loading && <div className="mb-4"><p>Loading...</p></div>}
-      {error && <div className="alert alert-danger mb-4" role="alert">{error}</div>}
+      {loading && <div className="loading-indicator">Loading...</div>}
+      {error && <div className="error-message">{error}</div>}
 
       {cleanedFileUrl && (
-        <div className="mb-4">
-          <h2>Download Cleaned File</h2>
-          <a href={cleanedFileUrl} download={file ? `cleaned_${file.name}` : 'cleaned_data'} className="btn btn-secondary">
+        <div className="download-section">
+          <a href={cleanedFileUrl} download={file ? `cleaned_${file.name}` : 'cleaned_data'} className="download-button">
             Download Cleaned Data
           </a>
         </div>
@@ -351,11 +410,12 @@ function App() {
 
       {analysisResults && (
         <div className="analysis-options">
-          {renderSectionButton("Show Summary", "summary")}
-          {renderSectionButton("Show Insights", "insights")}
-          {renderSectionButton("Show Charts", "charts")}
+          {renderSectionButton("Show Summary", "summary", summaryIcon)}
+          {renderSectionButton("Show Insights", "insights", insightsIcon)}
+          {renderSectionButton("Show Charts", "charts", chartsIcon)}
         </div>
       )}
+
 
       {showSection === "summary" && analysisResults.summary && (
         <div className="summary-results mb-4">
