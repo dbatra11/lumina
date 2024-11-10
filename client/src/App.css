@@ -62,3 +62,21 @@ pre {
 .table {
   margin-top: 10px;
 }
+
+/* frontend/src/App.css */
+
+.summary-results p {
+  text-align: left;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+}
+
+.summary-results ul {
+  text-align: left;
+  list-style-type: disc;
+  padding-left: 20px;
+}
+
+.summary-results li {
+  margin-bottom: 5px;
+}

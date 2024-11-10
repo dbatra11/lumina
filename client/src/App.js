@@ -34,16 +34,18 @@ function App() {
   const [cleanedFileUrl, setCleanedFileUrl] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [charts, setCharts] = useState(null);
-  const [loading, setLoading] = useState(false); // New loading state
+  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(null); // Error state
 
   // Handle file selection
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
-    // Reset previous results
+    // Reset previous results and errors
     setAnalysisResults(null);
     setCleanedFileUrl(null);
     setStatistics(null);
     setCharts(null);
+    setError(null);
   };
 
   // Handle data cleaning
@@ -65,7 +67,11 @@ function App() {
       alert('Data cleaned successfully!');
     } catch (error) {
       console.error('Error cleaning data:', error);
-      alert('Failed to clean data.');
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(`Failed to clean data: ${error.response.data.error}`);
+      } else {
+        alert('Failed to clean data.');
+      }
     }
   };
 
@@ -77,12 +83,15 @@ function App() {
     }
 
     setLoading(true); // Start loading
+    setError(null); // Reset previous errors
     const formData = new FormData();
     formData.append('file', file);
     try {
       const response = await axios.post('http://127.0.0.1:5000/api/analyze', formData);
 
-      console.log('Analysis Response:', response.data); // Log for debugging
+      console.log('Analysis Response:', response.data); // Log entire response
+      console.log('Summary:', response.data.summary);    // Log summary specifically
+
       setAnalysisResults(response.data);
       setCharts(response.data.charts || []);
       setLoading(false); // Stop loading
@@ -90,8 +99,10 @@ function App() {
     } catch (error) {
       console.error('Error analyzing data:', error);
       if (error.response && error.response.data && error.response.data.error) {
+        setError(`Failed to analyze data: ${error.response.data.error}`);
         alert(`Failed to analyze data: ${error.response.data.error}`);
       } else {
+        setError('Failed to analyze data.');
         alert('Failed to analyze data.');
       }
       setLoading(false); // Stop loading
@@ -176,7 +187,7 @@ function App() {
     }
   };
 
-  // Render insights with titles and formatted data, excluding 'labels' and 'cluster_centers'
+  // Render insights with titles and formatted data
   const renderInsights = (insights) => {
     if (!insights || Object.keys(insights).length === 0) {
       console.log("No insights available or insights are empty:", insights);
@@ -203,6 +214,32 @@ function App() {
             </div>
           );
         })}
+      </div>
+    );
+  };
+
+  // Render summary with proper formatting
+  const renderSummary = (summary) => {
+    if (!summary) return null;
+
+    // Split the summary into sections based on dashes
+    const lines = summary.split(' - ');
+
+    // The first part before the first dash
+    const firstPart = lines.shift();
+
+    // The remaining parts are list items
+    const listItems = lines.map(item => item.trim());
+
+    return (
+      <div className="summary-results mb-4">
+        <h3>Summary</h3>
+        <p>{firstPart}</p>
+        <ul>
+          {listItems.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
       </div>
     );
   };
@@ -315,6 +352,13 @@ function App() {
         </div>
       )}
 
+      {/* Error Message */}
+      {error && (
+        <div className="alert alert-danger mb-4" role="alert">
+          {error}
+        </div>
+      )}
+
       {/* Cleaned File Download */}
       {cleanedFileUrl && (
         <div className="mb-4">
@@ -332,6 +376,11 @@ function App() {
 
           {/* Render Structured Insights */}
           {renderInsights(analysisResults.insights)}
+
+          {/* Render Summary */}
+          {analysisResults.summary && (
+            renderSummary(analysisResults.summary)
+          )}
 
           {/* Data Visualizations */}
           {charts && charts.length > 0 && (
