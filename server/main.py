@@ -9,6 +9,7 @@ from models import ml_train, ml_predict, analyze_data
 from utils import data_cleaning
 import os
 import pandas as pd
+import numpy as np
 import json
 from werkzeug.utils import secure_filename
 import logging
@@ -31,21 +32,42 @@ if not os.path.exists(UPLOAD_FOLDER):
 trained_model = None
 model_score = None
 
+def replace_nan_with_none(data):
+    if isinstance(data, dict):
+        return {k: replace_nan_with_none(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [replace_nan_with_none(item) for item in data]
+    elif isinstance(data, float) and np.isnan(data):
+        return None
+    return data
+
 def convert_timestamps(obj):
     """
-    Recursively convert pandas Timestamp objects to strings and handle NaT.
+    Recursively convert non-serializable objects to serializable ones.
     """
     if isinstance(obj, pd.Timestamp):
         return obj.isoformat()
     elif pd.isna(obj):
         return None
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, pd.Series):
+        return obj.to_list()
+    elif isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient='records')
     elif isinstance(obj, dict):
         return {k: convert_timestamps(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [convert_timestamps(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
     else:
         return obj
-
+    
 def detect_file_encoding(file_path, num_bytes=10000):
     """
     Detect the encoding of a file using chardet.
@@ -159,6 +181,11 @@ def analyze_data_endpoint():
     except Exception as e:
         logger.error(f"Model training failed for file {filename}: {str(e)}")
         return jsonify({"error": f"Model training failed: {str(e)}"}), 500
+    response_data = {
+        "insights": replace_nan_with_none(insights),
+        "charts": replace_nan_with_none(charts),
+        "summary": replace_nan_with_none(summary)
+    }
 
     @after_this_request
     def remove_file(response):
@@ -170,11 +197,7 @@ def analyze_data_endpoint():
         return response
 
     # Return the JSON response with insights, charts, and summary
-    return jsonify({
-        "insights": insights,
-        "charts": charts,
-        "summary": summary
-    })
+    return jsonify(response_data)
 
 @app.route('/api/predict', methods=['POST'])
 def predict_endpoint():
@@ -411,4 +434,3 @@ def clean_data_endpoint():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
