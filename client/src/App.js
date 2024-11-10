@@ -1,6 +1,6 @@
 // frontend/src/App.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 import { Bar, Line, Pie } from 'react-chartjs-2';
@@ -37,6 +37,40 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
+function AnimatedBarGraph() {
+  const numBars = 30; // Number of bars
+  const colors = ['#90caf9', '#f48fb1', '#ffcc80', '#aed581', '#ce93d8']; // Array of colors
+  const [bars, setBars] = useState(Array.from({ length: numBars }, (_, i) => Math.sin(i) * 30 + 50)); // Initial wave pattern
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhase((prevPhase) => prevPhase + 0.1); // Increment phase to animate wave
+      setBars(bars.map((_, i) => Math.sin(i + phase) * 30 + 50)); // Update heights in wave pattern
+    }, 100); // Update every 100ms for a smooth wave effect
+
+    return () => clearInterval(interval);
+  }, [phase, bars]);
+
+  return (
+    <div className="animated-bar-graph">
+      {bars.map((height, index) => (
+        <div
+          key={index}
+          className="bar"
+          style={{
+            height: `${height}%`,
+            backgroundColor: colors[index % colors.length], // Cycle through colors
+            transition: 'height 0.1s ease-in-out'
+          }}
+        ></div>
+      ))}
+    </div>
+  );
+}
+
+
 
 
 function App() {
@@ -439,6 +473,7 @@ function App() {
           {renderDescriptiveStatistics(statistics)}
         </div>
       )}
+       <AnimatedBarGraph />
     </div>
   );
 }
