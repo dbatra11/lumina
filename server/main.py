@@ -155,7 +155,7 @@ def analyze_data_endpoint():
         trained_model = model
         model_score = score
         insights['model_accuracy'] = score
-        logger.info(f"Model trained successfully with accuracy: {score}")
+        logger.info(f"Model trained successfully with R^2 score: {score}")
 
         # Save the model to disk
         joblib.dump(model, 'models/trained_model.joblib')

@@ -33,3 +33,32 @@ img {
   max-width: 100%;
   height: auto;
 }
+
+pre {
+  text-align: left;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 5px;
+  overflow-x: auto;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+.btn {
+  margin-right: 10px;
+}
+
+.table {
+  margin-top: 10px;
+}

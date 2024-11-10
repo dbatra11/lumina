@@ -5,7 +5,8 @@ import logging
 
 def clean(df):
     """
-    Clean the DataFrame by dropping categorical variables and handling missing values.
+    Clean the DataFrame by dropping categorical variables, handling missing values,
+    and removing constant columns.
     """
     logger = logging.getLogger(__name__)
     

@@ -216,13 +216,22 @@ function App() {
     if (!charts || charts.length === 0) return <p>No charts available.</p>;
 
     return charts.map((chartInfo, index) => {
-      const { type, title, image } = chartInfo;
+      const { type, title, image, text } = chartInfo;
 
       if (type === 'image') {
         return (
           <div key={index} className="mb-4">
             <h4>{title}</h4>
             <img src={`data:image/png;base64,${image}`} alt={title} className="img-fluid" />
+          </div>
+        );
+      }
+
+      if (type === 'text') {
+        return (
+          <div key={index} className="mb-4">
+            <h4>{title}</h4>
+            <p>{text}</p>
           </div>
         );
       }

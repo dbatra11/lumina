@@ -1,22 +1,7 @@
-# backend/models/ml_predict.py
-
 import pandas as pd
-import joblib
 import logging
 
-def load_model(model_path='models/trained_model.joblib'):
-    """
-    Load the trained machine learning model from disk.
-    """
-    try:
-        model = joblib.load(model_path)
-        logging.info("Trained model loaded successfully.")
-        return model
-    except Exception as e:
-        logging.error(f"Failed to load the trained model: {str(e)}")
-        raise e
-
-def predict_future(model, data):
+def ml_predict(model, data):
     """
     Make predictions using the trained model.
     Expects data as a list of dictionaries where keys are feature names.
@@ -26,10 +11,8 @@ def predict_future(model, data):
     df_new = pd.DataFrame(data)
     logger.info("Received prediction input data.")
 
-    # Ensure all features are numeric
-    if not all(pd.api.types.is_numeric_dtype(dtype) for dtype in df_new.dtypes):
-        df_new = df_new.apply(pd.to_numeric, errors='coerce').fillna(0)
-        logger.info("Converted non-numeric prediction input data to numeric with NaN values filled.")
+    # Ensure all features are numeric (handle encoding if necessary)
+    # Note: In production, you should apply the same preprocessing as in training
 
     # Align the new data with training data
     if hasattr(model, 'feature_names_in_'):

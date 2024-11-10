@@ -14,3 +14,19 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Additional styling for better visualization */
+h2 {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+h3 {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+h4 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
