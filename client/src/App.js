@@ -1,7 +1,6 @@
 // frontend/src/App.js
 
 import React, { useState } from 'react';
-import { Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import './App.css';
 import { Bar, Line, Pie } from 'react-chartjs-2';
@@ -35,7 +34,9 @@ function App() {
   const [cleanedFileUrl, setCleanedFileUrl] = useState(null);
   const [statistics, setStatistics] = useState(null);
   const [charts, setCharts] = useState(null);
+  const [loading, setLoading] = useState(false); // New loading state
 
+  // Handle file selection
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
     // Reset previous results
@@ -45,6 +46,7 @@ function App() {
     setCharts(null);
   };
 
+  // Handle data cleaning
   const handleCleanData = async () => {
     if (!file) {
       alert('Please upload a file first.');
@@ -54,7 +56,7 @@ function App() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await axios.post('http://localhost:5000/api/clean', formData, {
+      const response = await axios.post('http://127.0.0.1:5000/api/clean', formData, {
         responseType: 'blob',
       });
       // Create a URL for the cleaned file
@@ -67,20 +69,23 @@ function App() {
     }
   };
 
+  // Handle data analysis
   const handleAnalyzeData = async () => {
     if (!file) {
       alert('Please upload a file first.');
       return;
     }
 
+    setLoading(true); // Start loading
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await axios.post('http://localhost:5000/api/analyze', formData);
-      setAnalysisResults(response.data.insights);
-      if (response.data.charts) {
-        setCharts(response.data.charts);
-      }
+      const response = await axios.post('http://127.0.0.1:5000/api/analyze', formData);
+
+      console.log('Analysis Response:', response.data); // Log for debugging
+      setAnalysisResults(response.data);
+      setCharts(response.data.charts || []);
+      setLoading(false); // Stop loading
       alert('Data analyzed successfully!');
     } catch (error) {
       console.error('Error analyzing data:', error);
@@ -89,9 +94,11 @@ function App() {
       } else {
         alert('Failed to analyze data.');
       }
+      setLoading(false); // Stop loading
     }
   };
 
+  // Handle descriptive statistics
   const handleDescriptiveStatistics = async () => {
     if (!file) {
       alert('Please upload a file first.');
@@ -101,7 +108,7 @@ function App() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const response = await axios.post('http://localhost:5000/api/descriptive_statistics', formData);
+      const response = await axios.post('http://127.0.0.1:5000/api/descriptive_statistics', formData);
       setStatistics(response.data);
       alert('Descriptive statistics retrieved successfully!');
     } catch (error) {
@@ -114,6 +121,7 @@ function App() {
     }
   };
 
+  // Render formatted tables for insights and statistics
   const renderFormattedTable = (data) => {
     return (
       <div>
@@ -122,14 +130,16 @@ function App() {
     );
   };
 
+  // Render individual table cells
   const renderCell = (value) => {
     if (typeof value === 'object' && value !== null) {
       return renderNestedTable(value);
     } else {
-      return <span>{value !== null ? value : 'N/A'}</span>;
+      return <span>{value !== null && value !== undefined ? value : 'N/A'}</span>;
     }
   };
 
+  // Render nested tables for complex data structures
   const renderNestedTable = (data) => {
     if (Array.isArray(data)) {
       return (
@@ -166,8 +176,44 @@ function App() {
     }
   };
 
+  // Render insights with titles and formatted data
+  const renderInsights = (insights) => {
+    if (!insights || Object.keys(insights).length === 0) {
+      console.log("No insights available or insights are empty:", insights);
+      return <p>No insights available.</p>;
+    }
+
+    return (
+      <div>
+        {Object.entries(insights).map(([section, sectionInsights], index) => (
+          <div key={index}>
+            <h3>{section.replace(/_/g, ' ').toUpperCase()}</h3>
+            {renderFormattedTable(sectionInsights)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Generate chart data for Chart.js
+  const generateChartData = (chartInfo) => {
+    const { type, labels, datasets } = chartInfo;
+    const data = {
+      labels: labels,
+      datasets: datasets.map((ds) => ({
+        label: ds.label,
+        data: ds.data,
+        backgroundColor: ds.backgroundColor || 'rgba(75,192,192,0.4)',
+        borderColor: ds.borderColor || 'rgba(75,192,192,1)',
+        fill: ds.fill || false,
+      })),
+    };
+    return { type, data };
+  };
+
+  // Render charts based on their type
   const renderCharts = () => {
-    if (!charts) return null;
+    if (!charts || charts.length === 0) return <p>No charts available.</p>;
 
     return charts.map((chartInfo, index) => {
       const { type, title, image } = chartInfo;
@@ -183,16 +229,7 @@ function App() {
 
       // Existing Chart.js rendering...
       const { labels, datasets } = chartInfo;
-      const data = {
-        labels: labels,
-        datasets: datasets.map((ds) => ({
-          label: ds.label,
-          data: ds.data,
-          backgroundColor: ds.backgroundColor || 'rgba(75,192,192,0.4)',
-          borderColor: ds.borderColor || 'rgba(75,192,192,1)',
-          fill: ds.fill || false,
-        })),
-      };
+      const data = generateChartData(chartInfo);
       const options = {
         responsive: true,
         plugins: {
@@ -219,6 +256,7 @@ function App() {
     });
   };
 
+  // Render descriptive statistics
   const renderStatistics = () => {
     if (!statistics) return null;
 
@@ -236,15 +274,27 @@ function App() {
   return (
     <div className="App container">
       <h1 className="mt-4 mb-4">Lumina Data Assistant</h1>
+      
+      {/* File Input */}
       <div className="mb-3">
         <input type="file" onChange={handleFileChange} className="form-control" />
       </div>
+
+      {/* Action Buttons */}
       <div className="mb-3">
         <button onClick={handleCleanData} className="btn btn-primary me-2">Clean Data</button>
         <button onClick={handleAnalyzeData} className="btn btn-success me-2">Analyze Data</button>
         <button onClick={handleDescriptiveStatistics} className="btn btn-info">Get Descriptive Statistics</button>
       </div>
 
+      {/* Loading Indicator */}
+      {loading && (
+        <div className="mb-4">
+          <p>Loading...</p>
+        </div>
+      )}
+
+      {/* Cleaned File Download */}
       {cleanedFileUrl && (
         <div className="mb-4">
           <h2>Download Cleaned File</h2>
@@ -254,11 +304,22 @@ function App() {
         </div>
       )}
 
+      {/* Analysis Results */}
       {analysisResults && (
         <div className="analysis-results mb-4">
           <h2>Analysis Results</h2>
-          {renderFormattedTable(analysisResults)}
-          {charts && (
+          
+          {/* Raw Insights Data for Debugging */}
+          <div>
+            <strong>Raw Insights Data:</strong>
+            <pre>{JSON.stringify(analysisResults.insights, null, 2)}</pre>
+          </div>
+
+          {/* Render Structured Insights */}
+          {renderInsights(analysisResults.insights)}
+
+          {/* Data Visualizations */}
+          {charts && charts.length > 0 && (
             <div className="charts mt-4">
               <h3>Data Visualizations</h3>
               {renderCharts()}
@@ -267,6 +328,7 @@ function App() {
         </div>
       )}
 
+      {/* Descriptive Statistics */}
       {statistics && (
         renderStatistics()
       )}
