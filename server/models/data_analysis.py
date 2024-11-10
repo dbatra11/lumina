@@ -323,3 +323,4 @@ def generate_summary(insights, target_variable):
     logger.info(f"Generated Summary: {summary_text}")
     
     return summary_text
+
