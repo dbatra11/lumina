@@ -30,3 +30,4 @@ def ml_predict(model, data):
     predictions = model.predict(df_new)
     logger.info("Predictions made successfully.")
     return predictions.tolist()
+
