@@ -112,8 +112,8 @@ def analyze_data(df):
         clusters = kmeans.fit_predict(scaled_data)
         numeric_df['Cluster'] = clusters
         insights['clustering'] = {
-            "cluster_centers": kmeans.cluster_centers_.tolist(),
             "labels": clusters.tolist()
+            # Removed 'cluster_centers' as per request
         }
         logger.info("Clustering analysis completed successfully.")
 

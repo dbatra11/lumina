@@ -176,7 +176,7 @@ function App() {
     }
   };
 
-  // Render insights with titles and formatted data
+  // Render insights with titles and formatted data, excluding 'labels' and 'cluster_centers'
   const renderInsights = (insights) => {
     if (!insights || Object.keys(insights).length === 0) {
       console.log("No insights available or insights are empty:", insights);
@@ -185,12 +185,24 @@ function App() {
 
     return (
       <div>
-        {Object.entries(insights).map(([section, sectionInsights], index) => (
-          <div key={index}>
-            <h3>{section.replace(/_/g, ' ').toUpperCase()}</h3>
-            {renderFormattedTable(sectionInsights)}
-          </div>
-        ))}
+        {Object.entries(insights).map(([section, sectionInsights], index) => {
+          // Skip 'labels' and 'cluster_centers' within 'clustering' section
+          if (section === 'clustering') {
+            const { labels, cluster_centers, ...restSectionInsights } = sectionInsights;
+            return (
+              <div key={index}>
+                <h3>{section.replace(/_/g, ' ').toUpperCase()}</h3>
+                {Object.keys(restSectionInsights).length > 0 && renderFormattedTable(restSectionInsights)}
+              </div>
+            );
+          }
+          return (
+            <div key={index}>
+              <h3>{section.replace(/_/g, ' ').toUpperCase()}</h3>
+              {renderFormattedTable(sectionInsights)}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -317,12 +329,6 @@ function App() {
       {analysisResults && (
         <div className="analysis-results mb-4">
           <h2>Analysis Results</h2>
-          
-          {/* Raw Insights Data for Debugging */}
-          <div>
-            <strong>Raw Insights Data:</strong>
-            <pre>{JSON.stringify(analysisResults.insights, null, 2)}</pre>
-          </div>
 
           {/* Render Structured Insights */}
           {renderInsights(analysisResults.insights)}
